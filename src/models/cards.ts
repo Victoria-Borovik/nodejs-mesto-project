@@ -32,6 +32,8 @@ const cardSchema = new Schema<Card>({
     type: Date,
     default: Date.now,
   },
+}, {
+  versionKey: false,
 });
 
 export default model<Card>('card', cardSchema);

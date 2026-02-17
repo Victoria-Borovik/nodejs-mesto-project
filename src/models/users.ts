@@ -23,6 +23,8 @@ const userSchema = new Schema<User>({
     type: String,
     required: true,
   },
+}, {
+  versionKey: false,
 });
 
 export default model<User>('user', userSchema);
