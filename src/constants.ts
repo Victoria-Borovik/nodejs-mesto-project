@@ -19,4 +19,5 @@ export const errorText = {
     notFound: 'Карточка с указанным _id не найдена',
   },
   serverFailed: 'На сервере произошла ошибка',
+  routeNotFound: 'Запрашиваемый ресурс не найден',
 };
