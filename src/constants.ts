@@ -1,3 +1,5 @@
+export const CREATED_SUCCESS_CODE = 201;
+
 export const VALIDATION_ERROR_CODE = 400;
 export const NOT_FOUND_ERROR_CODE = 404;
 export const SERVER_ERROR_CODE = 500;

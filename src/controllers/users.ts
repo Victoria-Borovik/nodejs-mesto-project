@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User from '../models/users';
 import {
+  CREATED_SUCCESS_CODE,
   VALIDATION_ERROR_CODE,
   NOT_FOUND_ERROR_CODE,
   SERVER_ERROR_CODE,
@@ -41,7 +42,9 @@ export const createUser = (req: Request, res: Response) => {
   const { name, about, avatar } = req.body;
 
   User.create({ name, about, avatar })
-    .then((user) => res.send({ data: user }))
+    .then((user) => res
+      .status(CREATED_SUCCESS_CODE)
+      .send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res

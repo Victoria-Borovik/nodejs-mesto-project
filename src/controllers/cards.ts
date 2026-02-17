@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Card from '../models/cards';
 import {
+  CREATED_SUCCESS_CODE,
   VALIDATION_ERROR_CODE,
   NOT_FOUND_ERROR_CODE,
   SERVER_ERROR_CODE,
@@ -21,7 +22,9 @@ export const createCard = (req: Request, res: Response) => {
   const { name, link } = req.body;
 
   Card.create({ name, link, owner: req.user?._id })
-    .then((card) => res.send({ data: card }))
+    .then((card) => res
+      .status(CREATED_SUCCESS_CODE)
+      .send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res
