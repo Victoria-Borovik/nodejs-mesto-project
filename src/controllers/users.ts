@@ -1,12 +1,18 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import User from '../models/users';
 import {
   CREATED_SUCCESS_CODE,
   VALIDATION_ERROR_CODE,
+  UNAUTHORIZED_ERROR_CODE,
   NOT_FOUND_ERROR_CODE,
   SERVER_ERROR_CODE,
+  SALT_ROUNDS,
   errorText,
 } from '../constants';
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 export const getUsers = (_: Request, res: Response) => {
   User.find({})
@@ -39,9 +45,14 @@ export const getUser = (req: Request, res: Response) => {
 };
 
 export const createUser = (req: Request, res: Response) => {
-  const { name, about, avatar } = req.body;
+  const {
+    email, password, name, about, avatar,
+  } = req.body;
 
-  User.create({ name, about, avatar })
+  bcrypt.hash(password, SALT_ROUNDS)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
     .then((user) => res
       .status(CREATED_SUCCESS_CODE)
       .send({ data: user }))
@@ -59,7 +70,7 @@ export const createUser = (req: Request, res: Response) => {
 };
 
 export const updateUser = (req: Request, res: Response) => {
-  const userId = req.user?._id;
+  const userId = req.user;
   const { name, about, avatar } = req.body;
 
   User.findByIdAndUpdate(
@@ -90,7 +101,7 @@ export const updateUser = (req: Request, res: Response) => {
 };
 
 export const updateAvatar = (req: Request, res: Response) => {
-  const userId = req.user?._id;
+  const userId = req.user;
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(
@@ -123,5 +134,35 @@ export const updateAvatar = (req: Request, res: Response) => {
       return res
         .status(SERVER_ERROR_CODE)
         .send({ message: errorText.serverFailed });
+    });
+};
+
+export const login = (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const key = NODE_ENV === 'production' ? JWT_SECRET : 'super-secret';
+
+      if (!key) {
+        throw new Error(errorText.user.noToken);
+      }
+
+      const token = jwt.sign(
+        { _id: user._id },
+        key,
+        { expiresIn: '1w' },
+      );
+
+      res.cookie('jwt', token, {
+        httpOnly: true,
+        sameSite: 'strict',
+        maxAge: 3600000 * 24 * 7,
+      }).end();
+    })
+    .catch((err) => {
+      res
+        .status(UNAUTHORIZED_ERROR_CODE)
+        .send({ message: err.message });
     });
 };

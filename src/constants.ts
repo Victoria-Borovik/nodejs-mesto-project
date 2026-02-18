@@ -1,6 +1,7 @@
 export const CREATED_SUCCESS_CODE = 201;
 
 export const VALIDATION_ERROR_CODE = 400;
+export const UNAUTHORIZED_ERROR_CODE = 401;
 export const NOT_FOUND_ERROR_CODE = 404;
 export const SERVER_ERROR_CODE = 500;
 
@@ -11,6 +12,7 @@ export const errorText = {
     invalidUpdateAvatar: 'Переданы некорректные данные при обновлении аватара',
     invalidId: 'Пользователь с указанным _id не найден',
     notFound: 'Пользователь по указанному _id не найден',
+    invalidCredentials: 'Неправильные почта или пароль',
   },
   card: {
     invalidCreateData: 'Переданы некорректные данные при создании карточки',
@@ -21,3 +23,9 @@ export const errorText = {
   serverFailed: 'На сервере произошла ошибка',
   routeNotFound: 'Запрашиваемый ресурс не найден',
 };
+
+export const successText = {
+  login: 'Успешная аутентификация',
+};
+
+export const SALT_ROUNDS = 10;
