@@ -44,6 +44,32 @@ export const getUser = (req: Request, res: Response) => {
     ));
 };
 
+export const getCurrentUser = (req: Request, res: Response) => {
+  const userId = req.user._id;
+
+  if (!userId) {
+    return res.status(UNAUTHORIZED_ERROR_CODE).send({
+      message: 'Необходима авторизация', // ToDo
+    });
+  }
+
+  return User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        return res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: errorText.user.notFound });
+      }
+
+      return res.send({ data: user });
+    })
+    .catch(() => (
+      res
+        .status(SERVER_ERROR_CODE)
+        .send({ message: errorText.serverFailed })
+    ));
+};
+
 export const createUser = (req: Request, res: Response) => {
   const {
     email, password, name, about, avatar,
@@ -66,6 +92,36 @@ export const createUser = (req: Request, res: Response) => {
       return res
         .status(SERVER_ERROR_CODE)
         .send({ message: errorText.serverFailed });
+    });
+};
+
+export const login = (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const key = NODE_ENV === 'production' ? JWT_SECRET : 'super-secret';
+
+      if (!key) {
+        throw new Error(errorText.user.noToken);
+      }
+
+      const token = jwt.sign(
+        { _id: user._id },
+        key,
+        { expiresIn: '1w' },
+      );
+
+      res.cookie('jwt', token, {
+        httpOnly: true,
+        sameSite: 'strict',
+        maxAge: 3600000 * 24 * 7,
+      }).end();
+    })
+    .catch((err) => {
+      res
+        .status(UNAUTHORIZED_ERROR_CODE)
+        .send({ message: err.message });
     });
 };
 
@@ -134,35 +190,5 @@ export const updateAvatar = (req: Request, res: Response) => {
       return res
         .status(SERVER_ERROR_CODE)
         .send({ message: errorText.serverFailed });
-    });
-};
-
-export const login = (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  return User.findUserByCredentials(email, password)
-    .then((user) => {
-      const key = NODE_ENV === 'production' ? JWT_SECRET : 'super-secret';
-
-      if (!key) {
-        throw new Error(errorText.user.noToken);
-      }
-
-      const token = jwt.sign(
-        { _id: user._id },
-        key,
-        { expiresIn: '1w' },
-      );
-
-      res.cookie('jwt', token, {
-        httpOnly: true,
-        sameSite: 'strict',
-        maxAge: 3600000 * 24 * 7,
-      }).end();
-    })
-    .catch((err) => {
-      res
-        .status(UNAUTHORIZED_ERROR_CODE)
-        .send({ message: err.message });
     });
 };

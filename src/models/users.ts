@@ -50,6 +50,7 @@ const userSchema = new Schema<User, UserModel>({
   password: {
     type: String,
     required: true,
+    select: false,
   },
 }, {
   versionKey: false,
