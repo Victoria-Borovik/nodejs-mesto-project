@@ -2,6 +2,7 @@ import { Schema, model } from 'mongoose';
 import type { Model } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
+import UnauthorisedError from '../errors/unauthorizes-err';
 import { errorText } from '../constants';
 
 interface User {
@@ -14,8 +15,7 @@ interface User {
 }
 
 interface UserModel extends Model<User> {
-  // eslint-disable-next-line no-unused-vars
-  findUserByCredentials(email: string, password: string): Promise<User>;
+  findUserByCredentials(_email: string, _password: string): Promise<User>;
 }
 
 const userSchema = new Schema<User, UserModel>({
@@ -60,16 +60,16 @@ userSchema.static('findUserByCredentials', function findUserByCredentials(
   email: string,
   password: string,
 ) {
-  return this.findOne({ email })
+  return this.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error(errorText.user.invalidCredentials));
+        throw new UnauthorisedError(errorText.user.invalidCredentials);
       }
 
       return bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            return Promise.reject(new Error(errorText.user.invalidCredentials));
+            throw new UnauthorisedError(errorText.user.invalidCredentials);
           }
 
           return user;

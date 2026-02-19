@@ -7,6 +7,7 @@ import { login, createUser } from './controllers/users';
 import userRoutes from './routes/users';
 import cardsRoutes from './routes/cards';
 import auth from './middlewares/auth';
+import handleError from './middlewares/handleError';
 import { NOT_FOUND_ERROR_CODE, errorText } from './constants';
 
 dotenv.config();
@@ -34,6 +35,8 @@ app.use((_, res) => {
     message: errorText.routeNotFound,
   });
 });
+
+app.use(handleError);
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
 

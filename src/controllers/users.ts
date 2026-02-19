@@ -1,76 +1,125 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/users';
+import NotFoundError from '../errors/not-found-err';
+import UnauthorisedError from '../errors/unauthorizes-err';
+import ValidationError from '../errors/validation-err';
+import ConflictError from '../errors/conflict-err';
+
 import {
   CREATED_SUCCESS_CODE,
-  VALIDATION_ERROR_CODE,
-  UNAUTHORIZED_ERROR_CODE,
-  NOT_FOUND_ERROR_CODE,
-  SERVER_ERROR_CODE,
   SALT_ROUNDS,
   errorText,
 } from '../constants';
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
-export const getUsers = (_: Request, res: Response) => {
+export const getUsers = (_req: Request, res: Response, next: NextFunction) => {
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => (
-      res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed })
-    ));
+    .catch(next);
 };
 
-export const getUser = (req: Request, res: Response) => {
+export const getCurrentUser = (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
+
+  console.log('req.user', req.user);
+
+  if (!userId) {
+    throw new UnauthorisedError(errorText.user.unauthorised);
+  }
+
+  User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError(errorText.user.notFound);
+      }
+
+      return res.send({ data: user });
+    })
+    .catch(next);
+};
+
+export const getUser = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
 
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: errorText.user.notFound });
+        throw new NotFoundError(errorText.user.notFound);
       }
 
       return res.send({ data: user });
     })
-    .catch(() => (
-      res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed })
-    ));
+    .catch(next);
 };
 
-export const getCurrentUser = (req: Request, res: Response) => {
-  const userId = req.user._id;
+export const updateUser = (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
 
   if (!userId) {
-    return res.status(UNAUTHORIZED_ERROR_CODE).send({
-      message: 'Необходима авторизация', // ToDo
-    });
+    throw new UnauthorisedError(errorText.user.unauthorised);
   }
 
-  return User.findById(userId)
+  const { name, about, avatar } = req.body;
+
+  User.findByIdAndUpdate(
+    userId,
+    { name, about, avatar },
+    { new: true, runValidators: true },
+  )
     .then((user) => {
       if (!user) {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: errorText.user.notFound });
+        throw new NotFoundError(errorText.user.notFound);
       }
 
       return res.send({ data: user });
     })
-    .catch(() => (
-      res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed })
-    ));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationError(errorText.user.invalidUpdateData));
+      } else {
+        next(err);
+      }
+    });
 };
 
-export const createUser = (req: Request, res: Response) => {
+export const updateAvatar = (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    throw new UnauthorisedError(errorText.user.unauthorised);
+  }
+
+  const { avatar } = req.body;
+
+  User.findByIdAndUpdate(
+    userId,
+    { avatar },
+    { new: true, runValidators: true },
+  )
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError(errorText.user.notFound);
+      }
+
+      if (!avatar) {
+        throw new ValidationError(errorText.user.invalidUpdateAvatar);
+      }
+
+      return res.send({ data: user });
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationError(errorText.user.invalidUpdateAvatar));
+      } else {
+        next(err);
+      }
+    });
+};
+
+export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const {
     email, password, name, about, avatar,
   } = req.body;
@@ -84,18 +133,16 @@ export const createUser = (req: Request, res: Response) => {
       .send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res
-          .status(VALIDATION_ERROR_CODE)
-          .send({ message: errorText.user.invalidCreateData });
+        next(new ValidationError(errorText.user.invalidCreateData));
+      } else if (err.code === 11000) {
+        next(new ConflictError(errorText.user.conflict));
+      } else {
+        next(err);
       }
-
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed });
     });
 };
 
-export const login = (req: Request, res: Response) => {
+export const login = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
@@ -116,79 +163,9 @@ export const login = (req: Request, res: Response) => {
         httpOnly: true,
         sameSite: 'strict',
         maxAge: 3600000 * 24 * 7,
-      }).end();
+      });
+
+      res.send({ token });
     })
-    .catch((err) => {
-      res
-        .status(UNAUTHORIZED_ERROR_CODE)
-        .send({ message: err.message });
-    });
-};
-
-export const updateUser = (req: Request, res: Response) => {
-  const userId = req.user;
-  const { name, about, avatar } = req.body;
-
-  User.findByIdAndUpdate(
-    userId,
-    { name, about, avatar },
-    { new: true, runValidators: true },
-  )
-    .then((user) => {
-      if (!user) {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: errorText.user.invalidId });
-      }
-
-      return res.send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res
-          .status(VALIDATION_ERROR_CODE)
-          .send({ message: errorText.user.invalidUpdateData });
-      }
-
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed });
-    });
-};
-
-export const updateAvatar = (req: Request, res: Response) => {
-  const userId = req.user;
-  const { avatar } = req.body;
-
-  User.findByIdAndUpdate(
-    userId,
-    { avatar },
-    { new: true, runValidators: true },
-  )
-    .then((user) => {
-      if (!user) {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: errorText.user.invalidId });
-      }
-
-      if (!avatar) {
-        return res
-          .status(VALIDATION_ERROR_CODE)
-          .send({ message: errorText.user.invalidUpdateAvatar });
-      }
-
-      return res.send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res
-          .status(VALIDATION_ERROR_CODE)
-          .send({ message: errorText.user.invalidUpdateAvatar });
-      }
-
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed });
-    });
+    .catch(next);
 };

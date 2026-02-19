@@ -23,7 +23,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
     }
 
     payload = jwt.verify(token, key);
-  } catch (err) {
+  } catch (_err) {
     return res
       .status(UNAUTHORIZED_ERROR_CODE)
       .send({ message: errorText.user.unauthorised });
