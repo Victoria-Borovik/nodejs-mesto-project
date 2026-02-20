@@ -16,7 +16,7 @@ const app = express();
 
 const limiter = rateLimit({
   windowMs: 5000,
-  max: 1,
+  max: 10,
 });
 
 app.use(express.json());

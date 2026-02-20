@@ -2,6 +2,7 @@ export const CREATED_SUCCESS_CODE = 201;
 
 export const VALIDATION_ERROR_CODE = 400;
 export const UNAUTHORIZED_ERROR_CODE = 401;
+export const FORBIDDEN_ERROR_CODE = 403;
 export const NOT_FOUND_ERROR_CODE = 404;
 export const CONFLICT_ERROR_CODE = 409;
 export const SERVER_ERROR_CODE = 500;
@@ -15,6 +16,7 @@ export const errorText = {
     notFound: 'Пользователь по указанному _id не найден',
     invalidCredentials: 'Неправильные почта или пароль',
     noToken: 'Токен не определён в переменных окружения',
+    invalidToken: 'Неверный формат токена',
     unauthorised: 'Необходима авторизация',
     conflict: 'Пользователь с таким email уже существует',
   },
@@ -23,6 +25,7 @@ export const errorText = {
     invalidLikeData: 'Переданы некорректные данные для постановки/снятии лайка',
     invalidId: 'Передан несуществующий _id карточки',
     notFound: 'Карточка с указанным _id не найдена',
+    forbidden: 'Нельзя удалить чужую карточку',
   },
   serverFailed: 'На сервере произошла ошибка',
   routeNotFound: 'Запрашиваемый ресурс не найден',

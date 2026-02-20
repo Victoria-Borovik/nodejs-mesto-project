@@ -1,115 +1,97 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import Card from '../models/cards';
-import {
-  CREATED_SUCCESS_CODE,
-  VALIDATION_ERROR_CODE,
-  NOT_FOUND_ERROR_CODE,
-  SERVER_ERROR_CODE,
-  errorText,
-} from '../constants';
+import ValidationError from '../errors/validation-err';
+import NotFoundError from '../errors/not-found-err';
+import ForbiddenError from '../errors/forbidden-err';
+import { CREATED_SUCCESS_CODE, errorText } from '../constants';
 
-export const getCards = (_: Request, res: Response) => {
+export const getCards = (_req: Request, res: Response, next: NextFunction) => {
   Card.find({})
     .then((cards) => res.send({ data: cards }))
-    .catch(() => (
-      res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed })
-    ));
+    .catch(next);
 };
 
-export const createCard = (req: Request, res: Response) => {
+export const createCard = (req: Request, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
+  const userId = req.user?._id;
 
-  Card.create({ name, link, owner: req.user?._id })
+  Card.create({ name, link, owner: userId })
     .then((card) => res
       .status(CREATED_SUCCESS_CODE)
       .send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res
-          .status(VALIDATION_ERROR_CODE)
-          .send({ message: errorText.card.invalidCreateData });
+        next(new ValidationError(errorText.card.invalidCreateData));
+      } else {
+        next(err);
       }
-
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed });
     });
 };
 
-export const deleteCard = (req: Request, res: Response) => {
+export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
+  const userId = req.user._id;
 
-  Card.findByIdAndDelete(cardId)
-    .then((deletedCard) => {
-      if (!deletedCard) {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: errorText.card.notFound });
+  Card.findById(cardId)
+    .then((card) => {
+      if (!card) {
+        throw new NotFoundError(errorText.card.notFound);
       }
 
-      return res.send({ data: deletedCard });
+      if (card.owner.toString() !== userId) {
+        throw new ForbiddenError(errorText.card.forbidden);
+      }
+
+      return Card.findByIdAndDelete(cardId);
     })
-    .catch(() => (
-      res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: errorText.serverFailed })
-    ));
+    .then((deletedCard) => {
+      res.send({ data: deletedCard });
+    })
+    .catch(next);
 };
 
-export const likeCard = (req: Request, res: Response) => {
+export const likeCard = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
+  const userId = req.user?._id;
 
   Card.findByIdAndUpdate(
     cardId,
-    { $addToSet: { likes: req.user?._id } },
+    { $addToSet: { likes: userId } },
     { new: true },
   ).then((card) => {
     if (!card) {
-      return res
-        .status(NOT_FOUND_ERROR_CODE)
-        .send({ message: errorText.card.invalidId });
+      throw new NotFoundError(errorText.card.invalidId);
     }
 
     return res.send({ data: card });
   }).catch((err) => {
     if (err.name === 'ValidationError') {
-      return res
-        .status(VALIDATION_ERROR_CODE)
-        .send({ message: errorText.card.invalidLikeData });
+      next(new ValidationError(errorText.card.invalidLikeData));
+    } else {
+      next(err);
     }
-
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: errorText.serverFailed });
   });
 };
 
-export const dislikeCard = (req: Request, res: Response) => {
+export const dislikeCard = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
+  const userId = req.user?._id;
 
   Card.findByIdAndUpdate(
     cardId,
-    { $pull: { likes: req.user?._id } },
+    { $pull: { likes: userId } },
     { new: true },
   ).then((card) => {
     if (!card) {
-      return res
-        .status(NOT_FOUND_ERROR_CODE)
-        .send({ message: errorText.card.invalidId });
+      throw new NotFoundError(errorText.card.invalidId);
     }
 
     return res.send({ data: card });
   }).catch((err) => {
     if (err.name === 'ValidationError') {
-      return res
-        .status(VALIDATION_ERROR_CODE)
-        .send({ message: errorText.card.invalidLikeData });
+      next(new ValidationError(errorText.card.invalidLikeData));
+    } else {
+      next(err);
     }
-
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: errorText.serverFailed });
   });
 };

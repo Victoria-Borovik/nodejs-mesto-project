@@ -24,8 +24,6 @@ export const getUsers = (_req: Request, res: Response, next: NextFunction) => {
 export const getCurrentUser = (req: Request, res: Response, next: NextFunction) => {
   const userId = req.user?._id;
 
-  console.log('req.user', req.user);
-
   if (!userId) {
     throw new UnauthorisedError(errorText.user.unauthorised);
   }
@@ -161,7 +159,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
 
       res.cookie('jwt', token, {
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: true,
         maxAge: 3600000 * 24 * 7,
       });
 
