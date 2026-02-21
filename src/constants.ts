@@ -39,4 +39,4 @@ export const successText = {
 
 export const SALT_ROUNDS = 10;
 
-export const urlRegex = /^https?:\/\/(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.ru(\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]*)?#?$/;
+export const urlRegex = /^https?:\/\/(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.(ru|net|com)(\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]*)?#?$/;
