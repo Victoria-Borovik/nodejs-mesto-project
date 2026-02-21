@@ -1,4 +1,5 @@
 import { Schema, Types, model } from 'mongoose';
+import { urlRegex } from '../constants';
 
 interface Card {
   name: string,
@@ -18,6 +19,7 @@ const cardSchema = new Schema<Card>({
   link: {
     type: String,
     required: true,
+    match: urlRegex,
   },
   owner: {
     type: Types.ObjectId,

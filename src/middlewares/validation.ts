@@ -27,9 +27,9 @@ export const validateUserId = celebrate({
 
 export const validateUpdateUser = celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(200),
-    avatar: Joi.string().uri(),
+    name: Joi.string().min(2).max(30).optional(),
+    about: Joi.string().min(2).max(200).optional(),
+    avatar: Joi.string().uri().optional(),
   }),
 });
 

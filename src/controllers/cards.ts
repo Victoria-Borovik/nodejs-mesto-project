@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import Card from '../models/cards';
-import ValidationError from '../errors/validation-err';
 import NotFoundError from '../errors/not-found-err';
 import ForbiddenError from '../errors/forbidden-err';
 import { CREATED_SUCCESS_CODE, errorText } from '../constants';
@@ -19,13 +18,7 @@ export const createCard = (req: Request, res: Response, next: NextFunction) => {
     .then((card) => res
       .status(CREATED_SUCCESS_CODE)
       .send({ data: card }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new ValidationError(errorText.card.invalidCreateData));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
@@ -64,13 +57,7 @@ export const likeCard = (req: Request, res: Response, next: NextFunction) => {
     }
 
     return res.send({ data: card });
-  }).catch((err) => {
-    if (err.name === 'ValidationError') {
-      next(new ValidationError(errorText.card.invalidLikeData));
-    } else {
-      next(err);
-    }
-  });
+  }).catch(next);
 };
 
 export const dislikeCard = (req: Request, res: Response, next: NextFunction) => {
@@ -87,11 +74,5 @@ export const dislikeCard = (req: Request, res: Response, next: NextFunction) => 
     }
 
     return res.send({ data: card });
-  }).catch((err) => {
-    if (err.name === 'ValidationError') {
-      next(new ValidationError(errorText.card.invalidLikeData));
-    } else {
-      next(err);
-    }
-  });
+  }).catch(next);
 };
