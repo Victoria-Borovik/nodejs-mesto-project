@@ -3,7 +3,7 @@ import type { Model } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import UnauthorisedError from '../errors/unauthorizes-err';
-import { errorText } from '../constants';
+import { errorText, urlRegex } from '../constants';
 
 interface User {
   _id: string;
@@ -35,16 +35,15 @@ const userSchema = new Schema<User, UserModel>({
   avatar: {
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    match: urlRegex,
   },
   email: {
     type: String,
     required: true,
     unique: true,
     validate: {
-      validator(value: string) {
-        return validator.isEmail(value);
-      },
-      message: 'Некорректный формат email',
+      validator: (v: string) => validator.isEmail(v),
+      message: errorText.user.invalidEmail,
     },
   },
   password: {

@@ -18,6 +18,8 @@ export const errorText = {
     noToken: 'Токен не определён в переменных окружения',
     invalidToken: 'Неверный формат токена',
     unauthorised: 'Необходима авторизация',
+    invalidEmail: 'Некорректный формат email',
+    invalidAvatar: 'Некорректный формат аватара пользователя',
     conflict: 'Пользователь с таким email уже существует',
   },
   card: {
@@ -36,3 +38,5 @@ export const successText = {
 };
 
 export const SALT_ROUNDS = 10;
+
+export const urlRegex = /^https?:\/\/(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.ru(\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]*)?#?$/;

@@ -148,7 +148,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
       const key = NODE_ENV === 'production' ? JWT_SECRET : 'super-secret';
 
       if (!key) {
-        throw new Error(errorText.user.noToken);
+        throw new UnauthorisedError(errorText.user.noToken);
       }
 
       const token = jwt.sign(
