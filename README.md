@@ -6,4 +6,3 @@
 ## Используемые технологии
 - Фреймворк Express.js
 - БД Mongodb и ODM Mongoose
-- Node.js
